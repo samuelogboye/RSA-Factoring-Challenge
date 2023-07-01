@@ -1,79 +1,41 @@
-#!/usr/bin/python3
+#!/usr/bin/env bash
+# This is a factors challenge
 
-import sys
-import time
+check_factor() {
+    if [ $# -ne 1 ]; then
+        echo "Usage: check_factor <number>"
+        exit 1
+    fi
 
-def sieve(limit):
-    '''Generates a list of prime numbers up to the specified limit using the Sieve of Eratosthenes algorithm.
-    Args:
-        limit: upper limit for generating primes.
-    Returns:
-        A list of prime numbers.
-    '''
-    is_prime = [True] * (limit + 1)
-    is_prime[0] = is_prime[1] = False
+    factors=$(factor "$1" | awk '{$1=""; print $0}' | sed 's/ //g')
+    factors_array=($factors)
 
-    primes = []
-    for i in range(2, int(limit ** 0.5) + 1):
-        if is_prime[i]:
-            for j in range(i * i, limit + 1, i):
-                is_prime[j] = False
+    if [ ${#factors_array[@]} -eq 1 ]; then
+        echo "$1=1*$1"
+    else
+        max_factor=${factors_array[-1]}
+        second_max_factor=${factors_array[-2]}
 
-    for i in range(2, limit + 1):
-        if is_prime[i]:
-            primes.append(i)
+        if [ ${#factors_array[@]} -gt 2 ]; then
+            for ((i=${#factors_array[@]}-3; i>=0; i--)); do
+                if [ $(echo "${factors_array[$i]}*$second_max_factor" | bc) -gt $(echo "$max_factor*${
+factors_array[$i+1]}" | bc) ]; then
+                    break
+                fi
 
-    return primes
+                second_max_factor=${factors_array[$i]}
+            done
+        fi
 
-def factorize(num, primes):
-    '''Takes a number as input and performs prime factorization.
-    Args:
-        num: input integer.
-        primes: list of prime numbers.
-    Returns:
-        A tuple of two factors if the number is not a prime.
-        None if the number is prime.
-    '''
-    for prime in primes:
-        if prime * prime > num:
-            break
-        if num % prime == 0:
-            return (prime, num // prime)
-    return None
+        echo "$1=$max_factor*$second_max_factor"
+    fi
+}
 
-if __name__ == "__main__":
-    '''Reads the input file.'''
-    if len(sys.argv) != 2:
-        print("Usage: factors <file>")
-        exit()
-
-    input_file = sys.argv[1]
-
-    try:
-        with open(input_file, 'r') as f:
-            lines = f.readlines()
-    except FileNotFoundError:
-        print("File not found")
-        exit()
-
-    start_time = time.time()
-
-    '''Generates a list of primes up to the maximum number in the input file.'''
-    max_num = max(int(line.strip()) for line in lines)
-    primes = sieve(max_num)
-
-    '''Loops over each line (which should contain one natural number per line)
-    and calls factorize on each number.
-    If factorize returns a tuple of factors,
-    it prints the factorization in the desired format.'''
-    for line in lines:
-        num = int(line.strip())
-        factors = factorize(num, primes)
-        if factors:
-            print(f"{num}={factors[1]}*{factors[0]}")
-
-        '''If the elapsed time exceeds 5 seconds,
-        the program exits with an error message.'''
-        if time.time() - start_time > 5:
-            print("Time limit exceeded")
-            exit()
+if [ $# -ne 1 ]; then
+    echo 'Usage: factors <file>'
+    exit 1
+else
+    while read -r number; do
+        check_factor "$number"
+    done < "$1"
+fi
