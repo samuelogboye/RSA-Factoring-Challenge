@@ -1,30 +1,48 @@
-#!/usr/bin/env python3
+#!/usr/bin/env bash
+#is a challenge
+check_factor()
+{
+	if [ $# -ne 3 ];
+        then
+                args=("$@")
+                count=0
+                num2=1
+                for a in ${args[*]};
+                do
+                        if [ $count -gt 1 ];
+                        then
+                                num2=$(echo $a*$num2 | bc)
+                        fi
+                        count=$((count + 1))
+                done
+        else
+                num2=$3
+        fi
 
-import sys
-import subprocess
+        num1=$2
+        num=$(echo "$1" | tr ':' '=')
 
-def check_factor(*args):
-    if len(args) != 3:
-        num2 = 1
-        for i, a in enumerate(args):
-            if i > 1:
-                num2 *= int(a)
-    else:
-        num2 = int(args[2])
+        result=$(echo "if($num2 > $num1) 1 else 0" | bc)
+	        if ((result == 1)); then
+		        numcp=$num1
+		        num1=$num2
+		        num2=$numcp
+                fi
 
-    num1 = int(args[1])
-    num = args[0].replace(':', '=')
+        echo "$num$num1*$num2"
+}
 
-    if num2 > num1:
-        num1, num2 = num2, num1
+if [ $# -ne 1 ]
+then
+        echo 'Usage: rsa <file>'
+        exit 1
+else
 
-    return f'{num}{num1}*{num2}'
+        while read i
+        do
 
-if len(sys.argv) != 2:
-    print('Usage: rsa <file>')
-    sys.exit(1)
+                result=$(factor "$i")
+                check_factor $result
 
-with open(sys.argv[1], 'r') as file:
-    for line in file:
-        result = subprocess.check_output(['factor', line]).decode().strip()
-        print(check_factor(*result.split()))
+        done < "$1"
+fi
