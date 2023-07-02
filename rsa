@@ -3,7 +3,12 @@
 import sys
 import subprocess
 
+"""Imported the Sys and subprocess module"""
+
+
 def check_factor(*args):
+    """Function to check factors"""
+    
     if len(args) != 3:
         num2 = 1
         for i, a in enumerate(args):
